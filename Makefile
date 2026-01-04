@@ -1,6 +1,8 @@
 HOME := $(shell echo $$HOME)
 HERE := $(shell echo $$PWD)
 
+BIOME_SCOPE ?= src/
+
 # Set bash instead of sh for the @if [[ conditions,
 # and use the usual safety flags:
 SHELL = /bin/bash -Eeu
@@ -19,100 +21,50 @@ help:    ## A brief listing of all available commands
 ci:
 	npm ci
 
-node_modules: ci
+node_modules:
+	npm install
 
 .PHONY: install
 install: node_modules    ## Install dependencies and create node_modules
 
 package.json:
 	@if [ ! -f package.json ]; then \
-        echo "Creating package.json..."; \
-        npm init -y; \
-        echo "Please configure your package.json manually"; \
-    fi
-
-.PHONY: install-eslint
-install-eslint: package.json
-	npm install --save-dev eslint @eslint/eslintrc eslint-config-next @typescript-eslint/parser @typescript-eslint/eslint-plugin
-	@if [ ! -f eslint.config.mjs ] && [ ! -f .eslintrc.json ]; then \
-        echo "Creating basic eslint.config.mjs..."; \
-        echo 'import { dirname } from "path";' > eslint.config.mjs; \
-        echo 'import { fileURLToPath } from "url";' >> eslint.config.mjs; \
-        echo 'import { FlatCompat } from "@eslint/eslintrc";' >> eslint.config.mjs; \
-        echo '' >> eslint.config.mjs; \
-        echo 'const __filename = fileURLToPath(import.meta.url);' >> eslint.config.mjs; \
-        echo 'const __dirname = dirname(__filename);' >> eslint.config.mjs; \
-        echo '' >> eslint.config.mjs; \
-        echo 'const compat = new FlatCompat({' >> eslint.config.mjs; \
-        echo '  baseDirectory: __dirname,' >> eslint.config.mjs; \
-        echo '});' >> eslint.config.mjs; \
-        echo '' >> eslint.config.mjs; \
-        echo 'const eslintConfig = [' >> eslint.config.mjs; \
-        echo '  ...compat.extends("next/core-web-vitals", "next/typescript"),' >> eslint.config.mjs; \
-        echo '];' >> eslint.config.mjs; \
-        echo '' >> eslint.config.mjs; \
-        echo 'export default eslintConfig;' >> eslint.config.mjs; \
-    fi
-
-.PHONY: install-jest
-install-jest: package.json
-	npm install --save-dev jest @types/jest jest-environment-jsdom @testing-library/react @testing-library/jest-dom
-	@if ! grep -q '"test"' package.json; then \
-        echo "Adding test script to package.json..."; \
-        npm pkg set scripts.test="jest"; \
-        npm pkg set scripts.test:watch="jest --watch"; \
-    fi
-	@if [ ! -f jest.config.js ]; then \
-        echo "Creating jest.config.js..."; \
-        echo 'const nextJest = require("next/jest");' > jest.config.js; \
-        echo '' >> jest.config.js; \
-        echo 'const createJestConfig = nextJest({' >> jest.config.js; \
-        echo '  dir: "./",' >> jest.config.js; \
-        echo '});' >> jest.config.js; \
-        echo '' >> jest.config.js; \
-        echo 'const config = {' >> jest.config.js; \
-        echo '  coverageProvider: "v8",' >> jest.config.js; \
-        echo '  testEnvironment: "jsdom",' >> jest.config.js; \
-        echo '  setupFilesAfterEnv: ["<rootDir>/jest.setup.js"],' >> jest.config.js; \
-        echo '};' >> jest.config.js; \
-        echo '' >> jest.config.js; \
-        echo 'module.exports = createJestConfig(config);' >> jest.config.js; \
-    fi
-	@if [ ! -f jest.setup.js ]; then \
-		echo "Creating jest.setup.js..."; \
-		echo 'import "@testing-library/jest-dom";' > jest.setup.js;
-		echo '' >> jest.config.js; \
+		echo "Creating package.json..."; \
+		npm init -y; \
+		echo "Please configure your package.json manually"; \
 	fi
 
-.PHONY: install-prettier
-install-prettier:
-	npm install --save-dev prettier
-	@if [ ! -f .prettierrc ]; then \
-        echo "Creating .prettierrc..."; \
-        echo '{' > .prettierrc; \
-        echo '  "semi": true,' >> .prettierrc; \
-        echo '  "trailingComma": "es5",' >> .prettierrc; \
-        echo '  "singleQuote": false,' >> .prettierrc; \
-        echo '  "tabWidth": 2,' >> .prettierrc; \
-        echo '  "useTabs": false' >> .prettierrc; \
-        echo '}' >> .prettierrc; \
-    fi
+.PHONY: install-sveltekit
+install-sveltekit: package.json    ## Install SvelteKit dependencies (does not scaffold a project)
+	@echo "Installing SvelteKit dependencies (requires an existing SvelteKit project scaffold)..."
+	npm install --save-dev @sveltejs/kit @sveltejs/adapter-auto @sveltejs/vite-plugin-svelte svelte vite
+	@node -e "const pkg=require('./package.json'); process.exit(pkg.scripts && pkg.scripts.dev ? 0 : 1)" >/dev/null 2>&1 || npm pkg set scripts.dev="vite dev"
+	@node -e "const pkg=require('./package.json'); process.exit(pkg.scripts && pkg.scripts.build ? 0 : 1)" >/dev/null 2>&1 || npm pkg set scripts.build="vite build"
+	@node -e "const pkg=require('./package.json'); process.exit(pkg.scripts && pkg.scripts.preview ? 0 : 1)" >/dev/null 2>&1 || npm pkg set scripts.preview="vite preview"
 
-.PHONY: install-typescript
-install-typescript:
-	npm install --save-dev typescript @types/node @types/react @types/react-dom
+.PHONY: install-biome
+install-biome: package.json
+	npm install --save-dev @biomejs/biome
+	@if [ ! -f biome.json ]; then \
+		npx @biomejs/biome init; \
+	fi
 
-CONVENTIONS.md:
-	@echo "Download the CONVENTIONS.md file from the [[https://github.com/unravel-team/metats][metats]] project"
+.PHONY: install-vitest
+install-vitest: package.json
+	npm install --save-dev vitest
+	@if ! npm pkg get scripts.test >/dev/null 2>&1; then npm pkg set scripts.test="vitest run"; fi
+	@if ! npm pkg get scripts.test:watch >/dev/null 2>&1; then npm pkg set scripts.test:watch="vitest"; fi
+	@if ! npm pkg get scripts.test:coverage >/dev/null 2>&1; then npm pkg set scripts.test:coverage="vitest run --coverage"; fi
 
-.aider.conf.yml:
-	@echo "Download the .aider.conf.yml file from the [[https://github.com/unravel-team/metats][metats]] project"
+.PHONY: install-svelte-check
+install-svelte-check: package.json
+	npm install --save-dev svelte-check typescript
 
 .gitignore:
 	@echo "Download the .gitignore file from the [[https://github.com/unravel-team/metats][metats]] project"
 
 .PHONY: install-dev-tools
-install-dev-tools: install-eslint install-jest install-prettier install-typescript CONVENTIONS.md .aider.conf.yml .gitignore    ## Install all development tools (ESLint, Jest, Prettier, Typescript)
+install-dev-tools: install-sveltekit install-vitest install-biome install-svelte-check .gitignore    ## Install all development tools (SvelteKit, Vitest, Biome, svelte-check)
 
 .PHONY: upgrade-libs
 upgrade-libs:    ## Upgrade all dependencies to their latest versions
@@ -127,22 +79,29 @@ check-tagref:
 	fi
 	tagref
 
-.PHONY: check-eslint
-check-eslint:
-	npm run lint
+.PHONY: check-biome
+check-biome:
+	npx @biomejs/biome check $(BIOME_SCOPE)
 
 .PHONY: check-typescript
 check-typescript:
-	npx tsc --noEmit
+	@if [ -f svelte.config.js ] || [ -f svelte.config.ts ]; then \
+		npx svelte-check --tsconfig ./tsconfig.json; \
+	else \
+		npx tsc --noEmit; \
+	fi
 
 .PHONY: check
-check: check-eslint check-typescript check-tagref    ## Check that the code is well linted, well typed, well documented
+check: check-biome check-typescript check-tagref    ## Check that the code is well linted, well typed, well documented
 	@echo "All checks passed!"
 
 .PHONY: format
-format:    ## Format code with Prettier and fix ESLint issues
-	npx prettier --write .
-	npm run lint -- --fix
+format:    ## Format code with Biome
+	@if [ -d "$(BIOME_SCOPE)" ]; then \
+		npx @biomejs/biome check --write $(BIOME_SCOPE); \
+	else \
+		echo "No $(BIOME_SCOPE) directory found; skipping Biome format"; \
+	fi
 
 .PHONY: test
 test:    ## Run all the tests for the code
@@ -152,17 +111,21 @@ test:    ## Run all the tests for the code
 test-watch:    ## Run tests in watch mode
 	npm run test:watch
 
+.PHONY: test-coverage
+test-coverage:    ## Run tests with coverage report
+	npm run test:coverage
+
 .PHONY: dev
-dev:    ## Run the Next.js development server with Turbopack
+dev:    ## Run the SvelteKit development server
 	npm run dev
 
 .PHONY: build
-build: check    ## Build the Next.js application for production
+build: check    ## Build the SvelteKit application for production
 	npm run build
 
-.PHONY: start
-start:    ## Start the production server
-	npm run start
+.PHONY: preview
+preview:    ## Preview the production build locally
+	npm run preview
 
 .PHONY: docker-compose-build
 docker-compose-build:   ## Build all the local infra (docker-compose)
@@ -185,15 +148,16 @@ deploy: build    ## Deploy the current code to production
 	@echo "Run deployment commands here (Vercel, Netlify, etc.)!"
 
 .PHONY: clean-cache
-clean-cache:    ## Clean npm cache and Next.js cache
+clean-cache:    ## Clean npm cache and SvelteKit/Vite caches
 	npm cache clean --force
-	rm -rf .next
+	rm -rf .svelte-kit
+	rm -rf node_modules/.vite
 
 .PHONY: clean
 clean:     ## Delete any existing artifacts
 	rm -rf node_modules/
-	rm -rf .next/
-	rm -rf dist/
+	rm -rf .svelte-kit/
 	rm -rf build/
+	rm -rf dist/
 	rm -rf coverage/
 	rm -f *.tsbuildinfo
