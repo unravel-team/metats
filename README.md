@@ -30,7 +30,7 @@ up                        # Bring up all the local infra (docker-compose)
 down                      # Bring down all the local infra (docker-compose)
 logs                      # Show all the logs (docker-compose)
 deploy                    # Deploy the current code to production
-clean-cache               # Clean npm cache and Next.js cache
+clean-cache               # Clean bun cache and Next.js cache
 clean                     # Delete any existing artifacts
 ```
 

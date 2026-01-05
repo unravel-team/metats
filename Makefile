@@ -19,10 +19,10 @@ help:    ## A brief listing of all available commands
 
 .PHONY: ci
 ci:
-	npm ci
+	bun ci
 
 node_modules:
-	npm install
+	bun install
 
 .PHONY: install
 install: node_modules    ## Install dependencies and create node_modules
@@ -30,35 +30,35 @@ install: node_modules    ## Install dependencies and create node_modules
 package.json:
 	@if [ ! -f package.json ]; then \
 		echo "Creating package.json..."; \
-		npm init -y; \
+		bun init -y; \
 		echo "Please configure your package.json manually"; \
 	fi
 
 .PHONY: install-sveltekit
 install-sveltekit: package.json    ## Install SvelteKit dependencies (does not scaffold a project)
 	@echo "Installing SvelteKit dependencies (requires an existing SvelteKit project scaffold)..."
-	npm install --save-dev @sveltejs/kit @sveltejs/adapter-auto @sveltejs/vite-plugin-svelte svelte vite
-	@node -e "const pkg=require('./package.json'); process.exit(pkg.scripts && pkg.scripts.dev ? 0 : 1)" >/dev/null 2>&1 || npm pkg set scripts.dev="vite dev"
-	@node -e "const pkg=require('./package.json'); process.exit(pkg.scripts && pkg.scripts.build ? 0 : 1)" >/dev/null 2>&1 || npm pkg set scripts.build="vite build"
-	@node -e "const pkg=require('./package.json'); process.exit(pkg.scripts && pkg.scripts.preview ? 0 : 1)" >/dev/null 2>&1 || npm pkg set scripts.preview="vite preview"
+	bun install --save-dev @sveltejs/kit @sveltejs/adapter-auto @sveltejs/vite-plugin-svelte svelte vite
+	@node -e "const pkg=require('./package.json'); process.exit(pkg.scripts && pkg.scripts.dev ? 0 : 1)" >/dev/null 2>&1 || bun pkg set scripts.dev="vite dev"
+	@node -e "const pkg=require('./package.json'); process.exit(pkg.scripts && pkg.scripts.build ? 0 : 1)" >/dev/null 2>&1 || bun pkg set scripts.build="vite build"
+	@node -e "const pkg=require('./package.json'); process.exit(pkg.scripts && pkg.scripts.preview ? 0 : 1)" >/dev/null 2>&1 || bun pkg set scripts.preview="vite preview"
 
 .PHONY: install-biome
 install-biome: package.json
-	npm install --save-dev @biomejs/biome
+	bun install --save-dev @biomejs/biome
 	@if [ ! -f biome.json ]; then \
-		npx @biomejs/biome init; \
+		bunx @biomejs/biome init; \
 	fi
 
 .PHONY: install-vitest
 install-vitest: package.json
-	npm install --save-dev vitest
-	@if ! npm pkg get scripts.test >/dev/null 2>&1; then npm pkg set scripts.test="vitest run"; fi
-	@if ! npm pkg get scripts.test:watch >/dev/null 2>&1; then npm pkg set scripts.test:watch="vitest"; fi
-	@if ! npm pkg get scripts.test:coverage >/dev/null 2>&1; then npm pkg set scripts.test:coverage="vitest run --coverage"; fi
+	bun install --save-dev vitest
+	@if ! bun pkg get scripts.test >/dev/null 2>&1; then bun pkg set scripts.test="vitest run"; fi
+	@if ! bun pkg get scripts.test:watch >/dev/null 2>&1; then bun pkg set scripts.test:watch="vitest"; fi
+	@if ! bun pkg get scripts.test:coverage >/dev/null 2>&1; then bun pkg set scripts.test:coverage="vitest run --coverage"; fi
 
 .PHONY: install-svelte-check
 install-svelte-check: package.json
-	npm install --save-dev svelte-check typescript
+	bun install --save-dev svelte-check typescript
 
 .gitignore:
 	@echo "Download the .gitignore file from the [[https://github.com/unravel-team/metats][metats]] project"
@@ -68,8 +68,8 @@ install-dev-tools: install-sveltekit install-vitest install-biome install-svelte
 
 .PHONY: upgrade-libs
 upgrade-libs:    ## Upgrade all dependencies to their latest versions
-	npm update
-	npm audit fix
+	bun update
+	bun audit fix
 
 .PHONY: check-tagref
 check-tagref:
@@ -81,14 +81,14 @@ check-tagref:
 
 .PHONY: check-biome
 check-biome:
-	npx @biomejs/biome check $(BIOME_SCOPE)
+	bunx @biomejs/biome check $(BIOME_SCOPE)
 
 .PHONY: check-typescript
 check-typescript:
 	@if [ -f svelte.config.js ] || [ -f svelte.config.ts ]; then \
-		npx svelte-check --tsconfig ./tsconfig.json; \
+		bunx svelte-check --tsconfig ./tsconfig.json; \
 	else \
-		npx tsc --noEmit; \
+		bunx tsc --noEmit; \
 	fi
 
 .PHONY: check
@@ -98,34 +98,34 @@ check: check-biome check-typescript check-tagref    ## Check that the code is we
 .PHONY: format
 format:    ## Format code with Biome
 	@if [ -d "$(BIOME_SCOPE)" ]; then \
-		npx @biomejs/biome check --write $(BIOME_SCOPE); \
+		bunx @biomejs/biome check --write $(BIOME_SCOPE); \
 	else \
 		echo "No $(BIOME_SCOPE) directory found; skipping Biome format"; \
 	fi
 
 .PHONY: test
 test:    ## Run all the tests for the code
-	npm test
+	bun test
 
 .PHONY: test-watch
 test-watch:    ## Run tests in watch mode
-	npm run test:watch
+	bun run test:watch
 
 .PHONY: test-coverage
 test-coverage:    ## Run tests with coverage report
-	npm run test:coverage
+	bun run test:coverage
 
 .PHONY: dev
 dev:    ## Run the SvelteKit development server
-	npm run dev
+	bun run dev
 
 .PHONY: build
 build: check    ## Build the SvelteKit application for production
-	npm run build
+	bun run build
 
 .PHONY: preview
 preview:    ## Preview the production build locally
-	npm run preview
+	bun run preview
 
 .PHONY: docker-compose-build
 docker-compose-build:   ## Build all the local infra (docker-compose)
@@ -148,8 +148,8 @@ deploy: build    ## Deploy the current code to production
 	@echo "Run deployment commands here (Vercel, Netlify, etc.)!"
 
 .PHONY: clean-cache
-clean-cache:    ## Clean npm cache and SvelteKit/Vite caches
-	npm cache clean --force
+clean-cache:    ## Clean bun cache and SvelteKit/Vite caches
+	bun cache clean --force
 	rm -rf .svelte-kit
 	rm -rf node_modules/.vite
 
