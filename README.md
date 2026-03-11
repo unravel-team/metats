@@ -1,4 +1,15 @@
 # metats
+
+> **⚠️ Project Archived**
+>
+> This repository has been archived. All language-specific metaprogramming projects have been consolidated into a single repository:
+>
+> 👉 [unravel-team/metaprogramming](https://github.com/unravel-team/metaprogramming)
+>
+> Please use the new unified repository for all future development.
+
+---
+
 Getting started quickly in Typescript projects, inspired by
 [unravel/metaclj](https://github.com/unravel-team/metaclj)
 
